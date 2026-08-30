@@ -1,0 +1,15 @@
+# Pesos y buffers entrenados (archivos grandes, se regeneran)
+*.pth
+Pesos/
+
+# Gráficas generadas
+Capturas/*.png
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Entornos
+.env
