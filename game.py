@@ -1,6 +1,7 @@
 import treys as tr
 from enum import Enum
 from utils import player,acciones
+import random
 import model 
 import torch
 trainingdata=model.ReplayBuffer(10000)
@@ -45,35 +46,10 @@ def getvalidActions(player, minbet):
         valid[acciones.CHECK]=1
     return valid
     
-def decisionround(round,players,pot,commoncards, minbet):
-    minbet=minbet
-    ha_terminado=True
-    for p in players:
-        estado=getEstado(round, p,pot,commoncards)
-        possibleactions=getvalidActions(p,minbet)
-        decision=p.makedecision(estado,possibleactions)
-        if decision==1 and p.cash>=minbet:
-            pot+=p.bet(minbet)
-        elif decision==2 and p.cash>=minbet+minbet*0.1:
-            pot+=p.bet(minbet+minbet*0.1)
-            minbet+=minbet*0.1
-        elif decision==3 and p.cash>=minbet+minbet*0.5:
-            pot+=p.bet(minbet+minbet*0.5)
-            minbet+=minbet*0.5
-        elif decision==3 and p.cash>=minbet*2:
-            pot+=p.bet(minbet*2)
-            minbet+=minbet
-        elif decision==5:
-            pot+=p.bet(p.cash)
-            valid=True
-        elif decision==6:
-            p.is_active=False
-            ha_terminado=False
-        else:
-            print("Not a valid option")     
-    return players, pot, ha_terminado
-
 def headsup(players,commoncards):
+    '''
+    Compara las manos utilizando Treys
+    '''
     puntos=[p.puntuar(commoncards) for p in players]
     puntuacion=dict(zip(puntos,players))
     ganador=puntuacion[max(puntos)]
@@ -89,29 +65,30 @@ def grabar_paso(trayectorias,p,estado,accion):
     })
 def cerrar_buffer(trayectorias,players,winner,pot, buy_in=500):
     '''
-    Saca la informacion de las listas de diccionarios de trayectorias y graba la informacion en la deque
+    Saca la informacion de las listas de diccionarios de trayectorias y graba la informacion en la deque de uno de los dos jugadores
     '''
-    for p in players:
-        if not p.IsAI:
-            continue
-        pasos=trayectorias.get(p.orden,[])
-        if p is winner:
-            delta=pot-p.totalbet
-        else:
-            delta=-p.totalbet
-        recompensa=delta/buy_in
-        for i, paso in enumerate(pasos):
-            done = (i == len(pasos) - 1)
-            nuevo_estado = pasos[i + 1]["estado"] if not done else None
-            r = recompensa if done else 0.0
- 
-            trainingdata.guardar((
-                paso["estado"],
-                paso["accion"],
-                r,
-                nuevo_estado,
-               done)
-            )
+    n=random.randint(0,1)
+    p=players[n]
+    pasos=trayectorias.get(p.orden,[])
+
+    if p is winner:
+        delta=pot-p.totalbet
+    else:
+        delta=-p.totalbet
+    recompensa=delta/buy_in
+    for i, paso in enumerate(pasos):
+        done = (i == len(pasos) - 1)
+        nuevo_estado = pasos[i + 1]["estado"] if not done else None
+        r = recompensa if done else 0.0
+
+        trainingdata.guardar((
+            paso["estado"],
+            paso["accion"],
+            r,
+            nuevo_estado,
+            done)
+        )
+    return p
 
 
         
@@ -122,18 +99,19 @@ def Partida(agente=None):
     """
     player1=player(1,500)
     player2=player(2,500)
-    if agente is not None:
-        player2.turnAI(True,agente)
     players=[player1,player2]
-    deck=tr.Deck()
-    round,pot,minbet=1,0, 10
     for p in players:
-        cards=deck.draw(2)
-        p.deal(cards)
+        p.turnAI(True,agente)
+    deck=tr.Deck()
+
+    round,pot,minbet=1,0, 10
     commoncards=[]
     juego_terminado=False
     trayectorias={}
     #flop
+    for p in players:
+        cards=deck.draw(2)
+        p.deal(cards)
     commoncards.extend(deck.draw(3))
     while not juego_terminado and round<3:
         ronda_terminada=False
@@ -176,8 +154,8 @@ def Partida(agente=None):
             commoncards.extend(deck.draw(5-len(commoncards)))
 
     winner=headsup(players,commoncards)
-    cerrar_buffer(trayectorias,players,winner,pot)
-    return winner
+    AIplayer=cerrar_buffer(trayectorias,players,winner,pot)
+    return winner,AIplayer
 
 
 

@@ -9,7 +9,8 @@ import numpy as np
 from collections import deque
 
 modelo = model.PokerTron()
-agente = model.Agente()
+agente_objetivo=model.Agente(modelo)
+agente = model.Agente(modelo)
 optimizer = torch.optim.Adam(modelo.parameters(), lr=1e-3)
 
 game.trainingdata.load("/home/garka/proyectos/pokerbot/Pesos/buffer_entrenamiento.pth")
@@ -24,9 +25,9 @@ historial_epsilon = []
 victorias_recientes = deque(maxlen=100)
 loss_recientes=deque(maxlen=100)
 
-for episodio in range(5000):
-    winner=game.Partida(agente)  # rellena game.trainingdata (tu ReplayBuffer global)
-    if winner.IsAI is True:
+for episodio in range(500):
+    winner,AIPlayer=game.Partida(agente)  # rellena game.trainingdata (tu ReplayBuffer global)
+    if winner==AIPlayer:
         victorias_recientes.append(1)
     else:
         victorias_recientes.append(0)
@@ -41,7 +42,7 @@ for episodio in range(5000):
         historial_loss.append(current_loss)
         historial_winrate.append(winrate)
         historial_epsilon.append(agente.epsilon)
-    if episodio > 0 and episodio % 1000 == 0:
+    if episodio > 0 and episodio % 499 == 0:
         game.trainingdata.save("/home/garka/proyectos/pokerbot/Pesos/buffer_entrenamiento.pth")
         agente.guardar_pesos("/home/garka/proyectos/pokerbot/Pesos/pesos_pokertron.pth")
         plt.figure(figsize=(12, 8))

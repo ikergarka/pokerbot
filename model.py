@@ -4,6 +4,9 @@ import torch.nn as nn
 from collections import deque
 
 class PokerTron(nn.Module):
+    '''
+    Modelo de DQN con ReLU para romper la linealidad
+    '''
     def __init__(self, input_dim=109, output_dim=7):
         super(PokerTron,self).__init__()
         self.red=nn.Sequential(
@@ -16,8 +19,11 @@ class PokerTron(nn.Module):
     def forward(self,x):
         return self.red(x)
 class Agente():
-    def __init__(self):
-        self.modelo=PokerTron()
+    '''
+    Clase que opera el modelo, permite accionarlo
+    '''
+    def __init__(self,modelo):
+        self.modelo=modelo
         self.epsilon=1.0
         self.epsilon_min=0.05
         self.epsilon_decay=0.999
@@ -51,6 +57,9 @@ class Agente():
         else:
             print(f"No se encontró {filepath}. El agente empezará a aprender desde cero.")
 class ReplayBuffer:
+    '''
+    Clase para gestionar la deque con más eficiencia
+    '''
     def __init__(self, maxcapacity=10000):
         self.memoria=deque(maxlen=maxcapacity)
 
@@ -80,7 +89,10 @@ class ReplayBuffer:
             print(f"No se encontró el archivo {filepath}. Se empezará desde cero.")
 
     
-def entrenar(agente, buffer, batch_size=64, gamma=0.99, optimizer=None):
+def entrenar(agente: Agente, buffer:ReplayBuffer, batch_size=64, gamma=0.99, optimizer=None):
+    '''
+    Recibe un buffer de s,a,r,s',done
+    '''
     if len(buffer) < batch_size:
         return None 
 
@@ -97,11 +109,11 @@ def entrenar(agente, buffer, batch_size=64, gamma=0.99, optimizer=None):
     siguientes_fix = [s if s is not None else [0.0] * dim for s in siguientes_estados]
     siguientes_t = torch.tensor(siguientes_fix, dtype=torch.float32)
 
-    # Q(s,a) para las acciones que realmente se tomaron
-    q_valores = agente.modelo(estados_t)
+    # Q(s,a) para las acciones que realmente se tomaron, base del DQN
+    q_valores = agente.modelo(estados_t)#Aquí podríamos añadir un valor que fuesen los Q(s,a) de la red objetivo
     q_actual = q_valores.gather(1, acciones_t.unsqueeze(1)).squeeze(1)
 
-    # target: r + gamma * max_a' Q(s', a')  (0 si el episodio terminó ahí)
+    # aplicamos simplemente la ecuacion de Bellman
     with torch.no_grad():
         q_siguiente = agente.modelo(siguientes_t)
         max_q_siguiente, _ = q_siguiente.max(dim=1)

@@ -12,6 +12,9 @@ class acciones(IntEnum):
     CHECK=6
 
 class player():
+    '''
+    Clase del Jugador
+    '''
     def __init__(self,orden,cash):
         self.agente=None
         self.cards=[]
@@ -22,6 +25,9 @@ class player():
         self.is_active=True
         self.orden=orden
     def turnAI(self, bool,agente):
+        '''
+        Activa la IA
+        '''
         self.IsAI=bool
         self.agente=agente
     def bet(self, amount):
