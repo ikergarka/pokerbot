@@ -63,7 +63,8 @@ def grabar_paso(trayectorias,p,estado,accion):
     '''
     Graba las decisiones tomadas y el estado en trayectorias de forma que va añadiendo diccionarios a la lista de acciones del jugador
     '''
-    trayectorias.setdefault(p.orden,[]).append({
+
+    trayectorias[p.orden-1].setdefault(p.orden,[]).append({
         "estado":estado,
         "accion":accion,
     })
@@ -116,7 +117,9 @@ def Partida(agente_rapido=None, agente_lento=None):
     round,pot,minbet=1,0, 10
     commoncards=[]
     juego_terminado=False
-    trayectorias={}
+    trayectorias_lento={}
+    trayectorias_rapido={}
+    trayectorias=[trayectorias_lento,trayectorias_rapido]
     for p in players:
         cards=deck.draw(2)
         p.deal(cards)
@@ -158,12 +161,12 @@ def Partida(agente_rapido=None, agente_lento=None):
             commoncards.extend(deck.draw())
             round+=1
         if juego_terminado and len(commoncards)<5:
-            winner=headsup(players,commoncards)
             commoncards.extend(deck.draw(5-len(commoncards)))
+            winner=headsup(players,commoncards)
         else:
             winner=headsup(players,commoncards)
-    player_rapido=cerrar_buffer(trayectorias,playerrapido,winner,pot,False)
-    player_lento=cerrar_buffer(trayectorias,playerlento,winner,pot,True)
+    player_rapido=cerrar_buffer(trayectorias_rapido,playerrapido,winner,pot,False)
+    player_lento=cerrar_buffer(trayectorias_lento,playerlento,winner,pot,True)
     return winner
 
 
