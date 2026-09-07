@@ -155,7 +155,7 @@ def Partida(agente_rapido=None, agente_lento=None):
         if round==1:
             commoncards.extend(deck.draw(2))
         if not juego_terminado:
-            commoncards.append(deck.draw())
+            commoncards.extend(deck.draw())
             round+=1
         if juego_terminado and len(commoncards)<5:
             winner=headsup(players,commoncards)
