@@ -15,21 +15,14 @@ class player():
     '''
     Clase del Jugador
     '''
-    def __init__(self,orden,cash):
-        self.agente=None
+    def __init__(self,orden,cash,agente):
+        self.agente=agente
         self.cards=[]
-        self.IsAI=False
+        self.IsAI=True
         self.cash=cash
         self.totalbet=0
-        self.puntos=0
         self.is_active=True
         self.orden=orden
-    def turnAI(self, bool,agente):
-        '''
-        Activa la IA
-        '''
-        self.IsAI=bool
-        self.agente=agente
     def bet(self, amount):
         self.cash-=amount
         self.totalbet+=amount
@@ -47,7 +40,7 @@ class player():
             accion=self.agente.elegir(estado, accvalidas)
         return accion
     def puntuar(self,commoncards):
-        self.puntos=tr.Evaluator().evaluate(self.cards,commoncards)
-        return self.puntos
+        puntos=tr.Evaluator().evaluate(self.cards,commoncards)
+        return puntos
     def deal(self,cartas):
         self.cards.extend(cartas)

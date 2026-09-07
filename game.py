@@ -4,10 +4,11 @@ from utils import player,acciones
 import random
 import model 
 import torch
-trainingdata=model.ReplayBuffer(10000)
+trainingdata_lento=model.ReplayBuffer(10000)
+trainingdata_rapido=model.ReplayBuffer(10000)
 def getSuit(card):
     palo_map={1:0,2:1,4:2,8:3}
-    s=tr.Card().get_suit_int(card)
+    s=tr.Card.get_suit_int(card)
     suit=palo_map[s]
     return suit
 def getEstado(round, player, pot, commoncards):
@@ -19,10 +20,13 @@ def getEstado(round, player, pot, commoncards):
         position=getSuit(c)*13+rank-1
         estado[position]=1
     for c in commoncards:
-        rank=tr.Card().get_rank_int(c)
+        rank=tr.Card.get_rank_int(c)
         position=getSuit(c)*13+rank+51
         estado[position]=1
-    score=tr.Evaluator().evaluate(cards,commoncards)
+    if len(commoncards)+len(cards)>=5:
+        score=tr.Evaluator().evaluate(cards,commoncards)
+    else:
+        score=0.0
     strength=1-score/7462
     estado[104]=strength
     estado[105]=pot
@@ -52,7 +56,7 @@ def headsup(players,commoncards):
     '''
     puntos=[p.puntuar(commoncards) for p in players]
     puntuacion=dict(zip(puntos,players))
-    ganador=puntuacion[max(puntos)]
+    ganador=puntuacion[min(puntos)]
     return ganador
 
 def grabar_paso(trayectorias,p,estado,accion):
@@ -63,56 +67,59 @@ def grabar_paso(trayectorias,p,estado,accion):
         "estado":estado,
         "accion":accion,
     })
-def cerrar_buffer(trayectorias,players,winner,pot, buy_in=500):
+def cerrar_buffer(trayectorias,player,winner,pot, lento, buy_in=500):
     '''
     Saca la informacion de las listas de diccionarios de trayectorias y graba la informacion en la deque de uno de los dos jugadores
     '''
-    n=random.randint(0,1)
-    p=players[n]
-    pasos=trayectorias.get(p.orden,[])
+    pasos=trayectorias.get(player.orden,[])
 
-    if p is winner:
-        delta=pot-p.totalbet
+    if player is winner:
+        delta=pot-player.totalbet
     else:
-        delta=-p.totalbet
+        delta=-player.totalbet
     recompensa=delta/buy_in
     for i, paso in enumerate(pasos):
         done = (i == len(pasos) - 1)
         nuevo_estado = pasos[i + 1]["estado"] if not done else None
         r = recompensa if done else 0.0
+        if lento==True:
 
-        trainingdata.guardar((
+            trainingdata_lento.guardar((
+                paso["estado"],
+                paso["accion"],
+                r,
+                nuevo_estado,
+                done)
+            )
+        else:
+            trainingdata_rapido.guardar((
             paso["estado"],
             paso["accion"],
             r,
             nuevo_estado,
             done)
-        )
-    return p
+            )
+    return player
 
 
         
-def Partida(agente=None):
+def Partida(agente_rapido=None, agente_lento=None):
     """
     Dos jugadores juegan una partida de poker. Se reparten las cartas y se determina el ganador.
     Graba las acciones que va tomando en un diccionario llamado trayectorias, que luego hace append a la variable global trainingdata, que es un deque detamaño 10000
     """
-    player1=player(1,500)
-    player2=player(2,500)
-    players=[player1,player2]
-    for p in players:
-        p.turnAI(True,agente)
+    playerlento=player(1,500,agente_lento)
+    playerrapido=player(2,500,agente_rapido)
+    players=[playerlento,playerrapido]
     deck=tr.Deck()
 
     round,pot,minbet=1,0, 10
     commoncards=[]
     juego_terminado=False
     trayectorias={}
-    #flop
     for p in players:
         cards=deck.draw(2)
         p.deal(cards)
-    commoncards.extend(deck.draw(3))
     while not juego_terminado and round<3:
         ronda_terminada=False
         while not ronda_terminada:
@@ -123,8 +130,7 @@ def Partida(agente=None):
                 estado=getEstado(round,p,pot,commoncards)
                 accion=getvalidActions(p,minbet)
                 decision=p.makedecision(estado,accion)
-                if p.IsAI==True:
-                    grabar_paso(trayectorias,p,estado,decision)
+                grabar_paso(trayectorias,p,estado,decision)
                 if decision==0:#CALL
                     minbet=p.bet(minbet)
                     pot+=minbet
@@ -146,16 +152,19 @@ def Partida(agente=None):
                     pot+=p.bet(p.cash)
                 elif decision==6:
                     ronda_terminada=True
-
+        if round==1:
+            commoncards.extend(deck.draw(2))
         if not juego_terminado:
-            commoncards.extend(deck.draw())
+            commoncards.append(deck.draw())
             round+=1
-        if juego_terminado and len(commoncards)<3:
+        if juego_terminado and len(commoncards)<5:
+            winner=headsup(players,commoncards)
             commoncards.extend(deck.draw(5-len(commoncards)))
-
-    winner=headsup(players,commoncards)
-    AIplayer=cerrar_buffer(trayectorias,players,winner,pot)
-    return winner,AIplayer
+        else:
+            winner=headsup(players,commoncards)
+    player_rapido=cerrar_buffer(trayectorias,playerrapido,winner,pot,False)
+    player_lento=cerrar_buffer(trayectorias,playerlento,winner,pot,True)
+    return winner
 
 
 
