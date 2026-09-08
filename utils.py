@@ -40,7 +40,7 @@ class player():
             accion=self.agente.elegir(estado, accvalidas)
         return accion
     def puntuar(self,commoncards):
-        puntos=tr.Evaluator.evaluate(self.cards,commoncards)
+        puntos=tr.Evaluator().evaluate(self.cards,commoncards)
         return puntos
     def deal(self,cartas):
         self.cards.extend(cartas)

@@ -48,8 +48,8 @@ for episodio in range(20000):
         victorias_recientes_rapido.append(0)
 
     print(winner.orden)
-    loss_rapido = model.entrenar(agente_rapido, game.trainingdata, batch_size=64, optimizer=optimizer_rapido)
-    loss_lento = model.entrenar(agente_lento,game.trainingdata, batch_size=64,optimizer=optimizer_lento)
+    loss_rapido = model.entrenar(agente_rapido, game.trainingdata_rapido, batch_size=64, optimizer=optimizer_rapido)
+    loss_lento = model.entrenar(agente_lento,game.trainingdata_lento, batch_size=64,optimizer=optimizer_lento)
     agente_rapido.actualizarepsilon()
     agente_lento.actualizarepsilon()
     loss_recientes_rapido.append(loss_rapido) if loss_rapido is not None else 0.0
