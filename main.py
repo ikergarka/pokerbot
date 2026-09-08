@@ -38,7 +38,7 @@ loss_recientes_rapido=deque(maxlen=100)
 victorias_recientes_lento = deque(maxlen=100)
 loss_recientes_lento=deque(maxlen=100)
 
-for episodio in range(20000):
+for episodio in range(1000):
     winner=game.Partida(agente_rapido,agente_lento)  # rellena game.trainingdata (tu ReplayBuffer global)
     if winner.agente==agente_rapido:
         victorias_recientes_rapido.append(1)
@@ -81,32 +81,32 @@ for episodio in range(20000):
         plt.figure(figsize=(12, 8))
         
         # Subplot 1: Tasa de Victorias Rapido
-        plt.subplot(3, 1, 1)
+        plt.subplot(3, 2, 1)
         plt.plot(historial_episodios, historial_winrate_rapido, label='Win Rate', color='green')
-        plt.title('Tasa de Victorias (Win Rate) de las últimas 100 partidas')
+        plt.title('Tasa de Victorias de las últimas partidas(media movil victoria l=100)')
         plt.ylabel('Win Rate')
         plt.legend()
         plt.grid(True)
         
         # Subplot 2: Loss rapido
-        plt.subplot(3, 1, 2)
+        plt.subplot(3, 2, 3)
         plt.plot(historial_episodios, historial_loss_rapido, label='Loss', color='red')
-        plt.title('Evolución del Error (Loss)')
+        plt.title('Evolución del Error Rapido')
         plt.ylabel('Loss')
         plt.legend()
         plt.grid(True)
         
         # Subplot 3: Epsilon Rapido
-        plt.subplot(3, 1, 3)
+        plt.subplot(3, 2, 5)
         plt.plot(historial_episodios, historial_epsilon_rapido, label='Epsilon', color='blue')
-        plt.title('Decaimiento de la Exploración (Epsilon)')
+        plt.title('Decaimiento de la Exploración Rapido')
         plt.xlabel('Episodios')
         plt.ylabel('Epsilon')
         plt.legend()
         plt.grid(True)
 
         # Subplot 4: Tasas de Victorias Lento
-        plt.subplot(3, 2, 1)
+        plt.subplot(3, 2, 2)
         plt.plot(historial_episodios, historial_winrate_lento, label='Win Rate', color='green')
         plt.title('Tasa de Victorias Lento')
         plt.ylabel('Win Rate')
@@ -114,7 +114,7 @@ for episodio in range(20000):
         plt.grid(True)
         
         # Subplot 2: Loss Lento
-        plt.subplot(3, 2, 2)
+        plt.subplot(3, 2, 4)
         plt.plot(historial_episodios, historial_loss_lento, label='Loss', color='red')
         plt.title('Evolución del Error Lento')
         plt.ylabel('Loss')
@@ -122,7 +122,7 @@ for episodio in range(20000):
         plt.grid(True)
         
         # Subplot 3: Epsilon
-        plt.subplot(3, 2, 3)
+        plt.subplot(3, 2, 6)
         plt.plot(historial_episodios, historial_epsilon_lento, label='Epsilon', color='blue')
         plt.title('Decaimiento de la Exploración Lento')
         plt.xlabel('Episodios')
